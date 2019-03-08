@@ -76,7 +76,8 @@ namespace GroovyRP
                 foundtrack:
                     client.SetPresence(new RichPresence()
                     {
-                        Details = title + "\n" + artist + "\n" + album
+                        Details = title,
+                        State = artist + " - " + album
                     });
                 skip:
                     client.Invoke();
