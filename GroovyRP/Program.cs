@@ -18,12 +18,11 @@ namespace GroovyRP
         static void Main(string[] args)
         {
             Console.WriteLine("GroovyRP\nhttps://github.com/dsdude123/GroovyRP\n\n");
-            string appkey = "553434642766626861";
             while (true)
             {
                 if (audioCheck())
                 {
-                    client = new DiscordRpcClient(appkey);
+                    client = new DiscordRpcClient("553434642766626861");
                     client.Initialize();
                     Console.Clear();
                     Console.WriteLine("GroovyRP\nhttps://github.com/dsdude123/GroovyRP\n\n");
@@ -37,6 +36,7 @@ namespace GroovyRP
                         {
                             Details = "Failed to get track info"
                         });
+                        Console.WriteLine("Failed to get track info");
                         goto skip;
                     }
                     string[] rows = csvcontents.Split('\n');
@@ -79,6 +79,7 @@ namespace GroovyRP
                         Details = title,
                         State = artist + " - " + album
                     });
+                    Console.WriteLine("Title: {0}\nArtist: {1}\nAlbum: {2}", title, artist, album);
                 skip:
                     client.Invoke();
                     System.Threading.Thread.Sleep(20000);
