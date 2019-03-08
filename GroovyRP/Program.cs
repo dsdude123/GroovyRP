@@ -86,7 +86,19 @@ namespace GroovyRP
                 }
                 else
                 {
-                    client.Dispose();
+                    
+                    try
+                    {
+                        Console.Clear();
+                        Console.WriteLine("GroovyRP\nhttps://github.com/dsdude123/GroovyRP\n\nGroove Music is not running or playing audio.");
+                        client.ClearPresence();
+                        client.Dispose();
+                    }
+                    catch (Exception e)
+                    {
+                        // This is okay, client may have not been initialized
+                    }                  
+                    System.Threading.Thread.Sleep(20000);
                 }
             }
 
