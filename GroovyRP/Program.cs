@@ -21,42 +21,70 @@ namespace GroovyRP
             string appkey = "";
             // Get application key
             client = new DiscordRpcClient(appkey);
-            client.Initialize();
             while (true)
             {
                 if (audioCheck())
-                { 
+                {
+                    client.Initialize();
                     Console.Clear();
                     Console.WriteLine("GroovyRP\nhttps://github.com/dsdude123/GroovyRP\n\n");
-                    // 
+                    // Get file handles
                     Process handlefinder = Process.Start("OpenedFilesView.exe", "/processfilter Music.UI.exe /scomma files.csv");
                     handlefinder.WaitForExit();
                     string csvcontents = System.IO.File.ReadAllText("files.csv");
                     if (csvcontents.Equals(""))
                     {
+                        client.SetPresence( new RichPresence()
+                        {
+                            Details = "Failed to get track info"
+                        });
                         goto skip;
                     }
                     string[] rows = csvcontents.Split('\n');
+
+                    string title = "Unknown Title";
+                    string artist = "Unknown Artist";
+                    string album = "Unknown Album";
+
                     foreach (string c in rows)
                     {
                         if (!c.Equals(""))
                         {
 
                             string[] data = c.Split(',');
-                            if (data[22].Equals("m4a"))
+                            if (supportedFileTypes.Contains(data[22],StringComparer.OrdinalIgnoreCase))
                             {
-                                Console.WriteLine("Detected: " + data[1]);
+        
                                 var media = TagLib.File.Create(data[1]);
-                                Console.WriteLine("Title: " + media.Tag.Title);
-                                //Console.WriteLine("Artist: " + media.Tag.AlbumArtists[0]);
-                                //Console.WriteLine("Album: " + media.Tag.Album);
-                                Console.WriteLine(
-                                    "==============================================================================================================");
+                                title = media.Tag.Title;
+                                if (media.Tag.Artists.Length > 0)
+                                {
+                                    artist = media.Tag.Artists.First();
+                                }
+                                else
+                                {
+                                    if (media.Tag.AlbumArtists.Length > 0)
+                                    {
+                                        artist = media.Tag.AlbumArtists.First();
+                                    }
+                                }
+
+                                album = media.Tag.Album;
+                                goto foundtrack;
                             }
                         }
                     }
+                    foundtrack:
+                    client.SetPresence(new RichPresence()
+                    {
+                        Details = title + "\n" + artist + "\n" + album
+                    });
                     skip:
                     System.Threading.Thread.Sleep(20000);
+                }
+                else
+                {
+                    client.Dispose();
                 }
             }
 
@@ -99,5 +127,7 @@ namespace GroovyRP
                 return false;
             }
         }
+
+        public static readonly string[] supportedFileTypes = { "aa", "aax", "aac", "aiff", "ape", "dsf", "flac", "m4a", "m4b", "m4p", "mp3", "mpc", "mpp", "ogg", "oga", "wav", "wma", "wv", "webm" };
     }
 }
