@@ -18,13 +18,12 @@ namespace GroovyRP
         static void Main(string[] args)
         {
             Console.WriteLine("GroovyRP\nhttps://github.com/dsdude123/GroovyRP\n\n");
-            string appkey = "";
-            // Get application key
-            client = new DiscordRpcClient(appkey);
+            string appkey = "553434642766626861";
             while (true)
             {
                 if (audioCheck())
                 {
+                    client = new DiscordRpcClient(appkey);
                     client.Initialize();
                     Console.Clear();
                     Console.WriteLine("GroovyRP\nhttps://github.com/dsdude123/GroovyRP\n\n");
@@ -34,7 +33,7 @@ namespace GroovyRP
                     string csvcontents = System.IO.File.ReadAllText("files.csv");
                     if (csvcontents.Equals(""))
                     {
-                        client.SetPresence( new RichPresence()
+                        client.SetPresence(new RichPresence()
                         {
                             Details = "Failed to get track info"
                         });
@@ -52,9 +51,9 @@ namespace GroovyRP
                         {
 
                             string[] data = c.Split(',');
-                            if (supportedFileTypes.Contains(data[22],StringComparer.OrdinalIgnoreCase))
+                            if (supportedFileTypes.Contains(data[22], StringComparer.OrdinalIgnoreCase))
                             {
-        
+
                                 var media = TagLib.File.Create(data[1]);
                                 title = media.Tag.Title;
                                 if (media.Tag.Artists.Length > 0)
@@ -74,12 +73,13 @@ namespace GroovyRP
                             }
                         }
                     }
-                    foundtrack:
+                foundtrack:
                     client.SetPresence(new RichPresence()
                     {
                         Details = title + "\n" + artist + "\n" + album
                     });
-                    skip:
+                skip:
+                    client.Invoke();
                     System.Threading.Thread.Sleep(20000);
                 }
                 else
@@ -92,7 +92,8 @@ namespace GroovyRP
 
         static bool audioCheck()
         {
-            if (Process.GetProcessesByName("Music.UI.exe").Length > 0)
+            Process[] grooveMusics = Process.GetProcessesByName("Music.UI");
+            if (grooveMusics.Length > 0)
             {
                 AudioSessionManager2 sessionManager;
                 using (var enumerator = new MMDeviceEnumerator())
@@ -107,16 +108,22 @@ namespace GroovyRP
                 {
                     foreach (var session in sessionEnumerator)
                     {
-                        if (session.DisplayName.Equals("Groove Music"))
+                        using (var sessionControl = session.QueryInterface<AudioSessionControl2>())
                         {
-                            using (var audioMeter= session.QueryInterface<AudioMeterInformation>())
+                            var process = sessionControl.Process;
+                            if (!process.ProcessName.Equals("Music.UI"))
                             {
-                                if (audioMeter.GetPeakValue() > 0)
-                                {
-                                    return true;
-                                }
+                                goto skipMetering;
                             }
                         }
+                        using (var audioMeter = session.QueryInterface<AudioMeterInformation>())
+                        {
+                            if (audioMeter.GetPeakValue() > 0)
+                            {
+                                return true;
+                            }
+                        }
+                        skipMetering:;
                     }
                 }
 
