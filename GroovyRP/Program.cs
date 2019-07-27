@@ -18,16 +18,17 @@ namespace GroovyRP
         static void Main(string[] args)
         {
             Console.WriteLine("GroovyRP\nhttps://github.com/dsdude123/GroovyRP\n\n");
+            client = new DiscordRpcClient("553434642766626861");
+            client.Initialize();
             while (true)
             {
                 if (audioCheck())
                 {
-                    client = new DiscordRpcClient("553434642766626861");
-                    client.Initialize();
+                    
                     Console.Clear();
                     Console.WriteLine("GroovyRP\nhttps://github.com/dsdude123/GroovyRP\n\n");
                     // Get file handles
-                    Process handlefinder = Process.Start("OpenedFilesView.exe", "/processfilter Music.UI.exe /scomma files.csv");
+                    Process handlefinder = Process.Start("openedfilesview\\OpenedFilesView.exe", "/processfilter Music.UI.exe /scomma files.csv");
                     handlefinder.WaitForExit();
                     string csvcontents = System.IO.File.ReadAllText("files.csv");
                     if (csvcontents.Equals(""))
@@ -37,52 +38,50 @@ namespace GroovyRP
                             Details = "Failed to get track info"
                         });
                         Console.WriteLine("Failed to get track info");
-                        goto skip;
+                        client.Invoke();
+                        System.Threading.Thread.Sleep(20000);
                     }
-                    string[] rows = csvcontents.Split('\n');
-
-                    string title = "Unknown Title";
-                    string artist = "Unknown Artist";
-                    string album = "Unknown Album";
-
-                    foreach (string c in rows)
+                    else
                     {
-                        if (!c.Equals(""))
+                        string[] rows = csvcontents.Split('\n');
+
+                        string title = "Unknown Title";
+                        string artist = "Unknown Artist";
+                        string album = "Unknown Album";
+
+                        foreach (string c in rows)
                         {
-
-                            string[] data = c.Split(',');
-                            if (supportedFileTypes.Contains(data[22], StringComparer.OrdinalIgnoreCase))
+                            if (!c.Equals(""))
                             {
+                                string[] data = c.Split(',');
+                                if (supportedFileTypes.Contains(data[22], StringComparer.OrdinalIgnoreCase))
+                                {
 
-                                var media = TagLib.File.Create(data[1]);
-                                title = media.Tag.Title;
-                                if (media.Tag.Artists.Length > 0)
-                                {
-                                    artist = media.Tag.Artists.First();
-                                }
-                                else
-                                {
-                                    if (media.Tag.AlbumArtists.Length > 0)
+                                    var media = TagLib.File.Create(data[1]);
+                                    title = media.Tag.Title;
+                                    if (media.Tag.Artists.Length > 0)
                                     {
-                                        artist = media.Tag.AlbumArtists.First();
+                                        artist = media.Tag.Artists.First();
                                     }
+                                    else
+                                    {
+                                        if (media.Tag.AlbumArtists.Length > 0)
+                                        {
+                                            artist = media.Tag.AlbumArtists.First();
+                                        }
+                                    }
+                                    album = media.Tag.Album;
+                                    break;
                                 }
-
-                                album = media.Tag.Album;
-                                goto foundtrack;
                             }
                         }
+
+                        client.UpdateDetails(title);
+                        client.UpdateState(artist + " - " + album);
+                        Console.WriteLine("Title: {0}\nArtist: {1}\nAlbum: {2}", title, artist, album);
+                        client.Invoke();
+                        System.Threading.Thread.Sleep(20000);
                     }
-                foundtrack:
-                    client.SetPresence(new RichPresence()
-                    {
-                        Details = title,
-                        State = artist + " - " + album
-                    });
-                    Console.WriteLine("Title: {0}\nArtist: {1}\nAlbum: {2}", title, artist, album);
-                skip:
-                    client.Invoke();
-                    System.Threading.Thread.Sleep(20000);
                 }
                 else
                 {
@@ -92,7 +91,6 @@ namespace GroovyRP
                         Console.Clear();
                         Console.WriteLine("GroovyRP\nhttps://github.com/dsdude123/GroovyRP\n\nGroove Music is not running or playing audio.");
                         client.ClearPresence();
-                        client.Dispose();
                     }
                     catch (Exception e)
                     {
@@ -122,22 +120,22 @@ namespace GroovyRP
                 {
                     foreach (var session in sessionEnumerator)
                     {
+                        bool targetProcess = false;
                         using (var sessionControl = session.QueryInterface<AudioSessionControl2>())
                         {
                             var process = sessionControl.Process;
-                            if (!process.ProcessName.Equals("Music.UI"))
+                            if (process.ProcessName.Equals("Music.UI"))
                             {
-                                goto skipMetering;
+                                targetProcess = true;
                             }
                         }
                         using (var audioMeter = session.QueryInterface<AudioMeterInformation>())
                         {
-                            if (audioMeter.GetPeakValue() > 0)
+                            if (audioMeter.GetPeakValue() > 0 && targetProcess)
                             {
                                 return true;
                             }
                         }
-                        skipMetering:;
                     }
                 }
 
