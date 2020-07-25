@@ -8,6 +8,10 @@ using DiscordRPC;
 using CSCore;
 using CSCore.CoreAudioAPI;
 using TagLib;
+using CsvHelper;
+using System.IO;
+using System.Globalization;
+using System.ComponentModel;
 
 namespace GroovyRP
 {
@@ -24,59 +28,56 @@ namespace GroovyRP
             {
                 if (audioCheck())
                 {
-                    
+
                     Console.Clear();
                     Console.WriteLine("GroovyRP\nhttps://github.com/dsdude123/GroovyRP\n\n");
                     // Get file handles
-                    Process handleFinder = Process.Start("openedfilesview\\OpenedFilesView.exe", "/processfilter Music.UI.exe /scomma files.csv");
-                    handleFinder.WaitForExit();
-                    string csvContents = System.IO.File.ReadAllText("files.csv");
-                    if (csvContents.Equals(""))
+                    try
                     {
-                        client.SetPresence(new RichPresence()
+                        Process handleFinder = Process.Start("openedfilesview\\OpenedFilesView.exe", "/processfilter Music.UI.exe /scomma files.csv");
+                        handleFinder.WaitForExit();
+                        StreamReader streamReader = System.IO.File.OpenText("files.csv");
+                        CsvParser csvParser = new CsvParser(streamReader, CultureInfo.InvariantCulture);
+
+                        string[] row = csvParser.Read();
+                        List<string[]> rows = new List<string[]>();
+
+                        while (row != null)
                         {
-                            Details = "Failed to get track info"
-                        });
-                        Console.WriteLine("Failed to get track info");
-                        client.Invoke();
-                        System.Threading.Thread.Sleep(20000);
-                    }
-                    else
-                    {
-                        string[] rows = csvContents.Split('\n');
+                            rows.Add(row);
+                            row = csvParser.Read();
+                        }
 
                         string title = "Unknown Title";
                         string artist = "Unknown Artist";
                         string album = "Unknown Album";
 
-                        foreach (string rowData in rows)
+                        foreach (string[] data in rows)
                         {
                             try
                             {
-                                if (!rowData.Equals(""))
+                                if (supportedFileTypes.Contains(data[20], StringComparer.OrdinalIgnoreCase))
                                 {
-                                    string[] data = rowData.Split(',');
-                                    if (supportedFileTypes.Contains(data[22], StringComparer.OrdinalIgnoreCase))
-                                    {
 
-                                        var media = TagLib.File.Create(data[1]);
-                                        title = media.Tag.Title;
-                                        if (media.Tag.Artists.Length > 0)
-                                        {
-                                            artist = media.Tag.Artists.First();
-                                        }
-                                        else
-                                        {
-                                            if (media.Tag.AlbumArtists.Length > 0)
-                                            {
-                                                artist = media.Tag.AlbumArtists.First();
-                                            }
-                                        }
-                                        album = media.Tag.Album;
-                                        break;
+                                    var media = TagLib.File.Create(data[1]);
+                                    title = media.Tag.Title;
+                                    if (media.Tag.Artists.Length > 0)
+                                    {
+                                        artist = media.Tag.Artists.First();
                                     }
+                                    else
+                                    {
+                                        if (media.Tag.AlbumArtists.Length > 0)
+                                        {
+                                            artist = media.Tag.AlbumArtists.First();
+                                        }
+                                    }
+                                    album = media.Tag.Album;
+                                    break;
                                 }
-                            } catch (Exception ex)
+
+                            }
+                            catch (Exception ex)
                             {
                                 // Do nothing since there was an issue processing the data
                             }
@@ -86,12 +87,24 @@ namespace GroovyRP
                         client.UpdateState(artist + " - " + album);
                         Console.WriteLine("Title: {0}\nArtist: {1}\nAlbum: {2}", title, artist, album);
                         client.Invoke();
+                        streamReader.Close();
+                        System.Threading.Thread.Sleep(20000);
+
+                    }
+                    catch (Exception ex)
+                    {
+                        client.SetPresence(new RichPresence()
+                        {
+                            Details = "Failed to get track info"
+                        });
+                        Console.WriteLine("Failed to get track info");
+                        client.Invoke();
                         System.Threading.Thread.Sleep(20000);
                     }
                 }
                 else
                 {
-                    
+
                     try
                     {
                         Console.Clear();
@@ -101,7 +114,7 @@ namespace GroovyRP
                     catch (Exception e)
                     {
                         // This is okay, client may have not been initialized
-                    }                  
+                    }
                     System.Threading.Thread.Sleep(20000);
                 }
             }
