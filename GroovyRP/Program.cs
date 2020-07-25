@@ -28,10 +28,10 @@ namespace GroovyRP
                     Console.Clear();
                     Console.WriteLine("GroovyRP\nhttps://github.com/dsdude123/GroovyRP\n\n");
                     // Get file handles
-                    Process handlefinder = Process.Start("openedfilesview\\OpenedFilesView.exe", "/processfilter Music.UI.exe /scomma files.csv");
-                    handlefinder.WaitForExit();
-                    string csvcontents = System.IO.File.ReadAllText("files.csv");
-                    if (csvcontents.Equals(""))
+                    Process handleFinder = Process.Start("openedfilesview\\OpenedFilesView.exe", "/processfilter Music.UI.exe /scomma files.csv");
+                    handleFinder.WaitForExit();
+                    string csvContents = System.IO.File.ReadAllText("files.csv");
+                    if (csvContents.Equals(""))
                     {
                         client.SetPresence(new RichPresence()
                         {
@@ -43,36 +43,42 @@ namespace GroovyRP
                     }
                     else
                     {
-                        string[] rows = csvcontents.Split('\n');
+                        string[] rows = csvContents.Split('\n');
 
                         string title = "Unknown Title";
                         string artist = "Unknown Artist";
                         string album = "Unknown Album";
 
-                        foreach (string c in rows)
+                        foreach (string rowData in rows)
                         {
-                            if (!c.Equals(""))
+                            try
                             {
-                                string[] data = c.Split(',');
-                                if (supportedFileTypes.Contains(data[22], StringComparer.OrdinalIgnoreCase))
+                                if (!rowData.Equals(""))
                                 {
+                                    string[] data = rowData.Split(',');
+                                    if (supportedFileTypes.Contains(data[22], StringComparer.OrdinalIgnoreCase))
+                                    {
 
-                                    var media = TagLib.File.Create(data[1]);
-                                    title = media.Tag.Title;
-                                    if (media.Tag.Artists.Length > 0)
-                                    {
-                                        artist = media.Tag.Artists.First();
-                                    }
-                                    else
-                                    {
-                                        if (media.Tag.AlbumArtists.Length > 0)
+                                        var media = TagLib.File.Create(data[1]);
+                                        title = media.Tag.Title;
+                                        if (media.Tag.Artists.Length > 0)
                                         {
-                                            artist = media.Tag.AlbumArtists.First();
+                                            artist = media.Tag.Artists.First();
                                         }
+                                        else
+                                        {
+                                            if (media.Tag.AlbumArtists.Length > 0)
+                                            {
+                                                artist = media.Tag.AlbumArtists.First();
+                                            }
+                                        }
+                                        album = media.Tag.Album;
+                                        break;
                                     }
-                                    album = media.Tag.Album;
-                                    break;
                                 }
+                            } catch (Exception ex)
+                            {
+                                // Do nothing since there was an issue processing the data
                             }
                         }
 
@@ -147,6 +153,26 @@ namespace GroovyRP
             }
         }
 
-        public static readonly string[] supportedFileTypes = { "aa", "aax", "aac", "aiff", "ape", "dsf", "flac", "m4a", "m4b", "m4p", "mp3", "mpc", "mpp", "ogg", "oga", "wav", "wma", "wv", "webm" };
+        public static readonly string[] supportedFileTypes = {
+            "aa",
+            "aax",
+            "aac",
+            "aiff",
+            "ape",
+            "dsf",
+            "flac",
+            "m4a",
+            "m4b",
+            "m4p",
+            "mp3",
+            "mpc",
+            "mpp",
+            "ogg",
+            "oga",
+            "wav",
+            "wma",
+            "wv",
+            "webm"
+        };
     }
 }
