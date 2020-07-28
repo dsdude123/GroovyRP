@@ -36,19 +36,11 @@ namespace GroovyRP
                     if (supportedFileTypes.Contains(data[20], StringComparer.OrdinalIgnoreCase))
                     {
                         var media = TagLib.File.Create(data[1]);
+
                         result.Title = media.Tag.Title;
-                        if (media.Tag.Performers.Length > 0)
-                        {
-                            result.Artist = media.Tag.Performers.First();
-                        }
-                        else
-                        {
-                            if (media.Tag.AlbumArtists.Length > 0)
-                            {
-                                result.Artist = media.Tag.AlbumArtists.First();
-                            }
-                        }
-                        result.Album = media.Tag.Album;
+                        result.Artist = media.Tag.AlbumArtists.First() ?? "Unknown Artist";
+                        result.Album = media.Tag.Album ?? "Unknown Album";
+
                         break;
                     }
                     streamReader.Close();
@@ -65,7 +57,7 @@ namespace GroovyRP
         public bool IsUsingAudio()
         {
             Process[] grooveMusics = Process.GetProcessesByName("Music.UI");
-            if (grooveMusics.Length > 0)
+            if (grooveMusics.Any())
             {
                 AudioSessionManager2 sessionManager;
                 using (var enumerator = new MMDeviceEnumerator())
