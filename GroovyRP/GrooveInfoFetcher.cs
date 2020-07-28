@@ -15,13 +15,13 @@ namespace GroovyRP
         {
             var result = new TrackInfo();
 
-            Process handleFinder = Process.Start("openedfilesview\\OpenedFilesView.exe", "/processfilter Music.UI.exe /scomma files.csv");
+            var handleFinder = Process.Start("openedfilesview\\OpenedFilesView.exe", "/processfilter Music.UI.exe /scomma files.csv");
             handleFinder.WaitForExit();
-            StreamReader streamReader = System.IO.File.OpenText("files.csv");
-            CsvParser csvParser = new CsvParser(streamReader, CultureInfo.InvariantCulture);
+            var streamReader = File.OpenText("files.csv");
+            var csvParser = new CsvParser(streamReader, CultureInfo.InvariantCulture);
 
-            string[] row = csvParser.Read();
-            List<string[]> rows = new List<string[]>();
+            var row = csvParser.Read();
+            var rows = new List<string[]>();
 
             while (row != null)
             {
@@ -56,7 +56,7 @@ namespace GroovyRP
 
         public bool IsUsingAudio()
         {
-            Process[] grooveMusics = Process.GetProcessesByName("Music.UI");
+            var grooveMusics = Process.GetProcessesByName("Music.UI");
             if (grooveMusics.Any())
             {
                 AudioSessionManager2 sessionManager;
