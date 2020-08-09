@@ -1,191 +1,93 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using DiscordRPC;
-using CSCore;
-using CSCore.CoreAudioAPI;
-using TagLib;
-using CsvHelper;
-using System.IO;
-using System.Globalization;
-using System.ComponentModel;
+using DiscordRPC.Message;
 
 namespace GroovyRP
 {
     class Program
     {
-        public static DiscordRpcClient client;
+        private const string appDetails = "GroovyRP\nOrignal Creator: https://github.com/dsdude123/GroovyRP";
+        private static readonly DiscordRpcClient _client = new DiscordRpcClient("737646410354130955", autoEvents: false);
+        private static readonly GrooveInfoFetcher _grooveInfoFetcher = new GrooveInfoFetcher();
+        private static string pressenceDetails = string.Empty;
 
-        static void Main(string[] args)
+        private static void Main()
         {
-            Console.WriteLine("GroovyRP\nhttps://github.com/dsdude123/GroovyRP\n\n");
-            client = new DiscordRpcClient("553434642766626861");
-            client.Initialize();
-            while (true)
-            {
-                if (audioCheck())
-                {
+            _client.Initialize();
+            _client.OnError += _client_OnError;
+            _client.OnPresenceUpdate += _client_OnPresenceUpdate;
 
-                    Console.Clear();
-                    Console.WriteLine("GroovyRP\nhttps://github.com/dsdude123/GroovyRP\n\n");
-                    // Get file handles
+            TrackInfo currentTrack = new TrackInfo();
+            TrackInfo oldTrack = new TrackInfo();
+
+            while (_client.IsInitialized)
+            {
+                if (_grooveInfoFetcher.IsUsingAudio())
+                {
                     try
                     {
-                        Process handleFinder = Process.Start("openedfilesview\\OpenedFilesView.exe", "/processfilter Music.UI.exe /scomma files.csv");
-                        handleFinder.WaitForExit();
-                        StreamReader streamReader = System.IO.File.OpenText("files.csv");
-                        CsvParser csvParser = new CsvParser(streamReader, CultureInfo.InvariantCulture);
-
-                        string[] row = csvParser.Read();
-                        List<string[]> rows = new List<string[]>();
-
-                        while (row != null)
+                        currentTrack = _grooveInfoFetcher.GetTrackInfo();
+                        if (oldTrack.Title != currentTrack.Title)
                         {
-                            rows.Add(row);
-                            row = csvParser.Read();
-                        }
+                            var details = $"Title: {currentTrack.Title}";
+                            var state = $"Artist: {currentTrack.Artist}";
 
-                        string title = "Unknown Title";
-                        string artist = "Unknown Artist";
-                        string album = "Unknown Album";
-
-                        foreach (string[] data in rows)
-                        {
-                            try
+                            _client.SetPresence(new RichPresence
                             {
-                                if (supportedFileTypes.Contains(data[20], StringComparer.OrdinalIgnoreCase))
+                                Details = details,
+                                State = state,
+                                Assets = new Assets
                                 {
-
-                                    var media = TagLib.File.Create(data[1]);
-                                    title = media.Tag.Title;
-                                    if (media.Tag.Artists.Length > 0)
-                                    {
-                                        artist = media.Tag.Artists.First();
-                                    }
-                                    else
-                                    {
-                                        if (media.Tag.AlbumArtists.Length > 0)
-                                        {
-                                            artist = media.Tag.AlbumArtists.First();
-                                        }
-                                    }
-                                    album = media.Tag.Album;
-                                    break;
+                                    LargeImageKey = "groove",
+                                    LargeImageText = "Groove Music",
+                                    SmallImageKey = "groove_small"
                                 }
+                            });
 
-                            }
-                            catch (Exception ex)
-                            {
-                                // Do nothing since there was an issue processing the data
-                            }
+                            _client.Invoke();
                         }
-
-                        client.UpdateDetails(title);
-                        client.UpdateState(artist + " - " + album);
-                        Console.WriteLine("Title: {0}\nArtist: {1}\nAlbum: {2}", title, artist, album);
-                        client.Invoke();
-                        streamReader.Close();
-                        System.Threading.Thread.Sleep(20000);
-
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
-                        client.SetPresence(new RichPresence()
+                        _client.SetPresence(new RichPresence()
                         {
                             Details = "Failed to get track info"
                         });
                         Console.WriteLine("Failed to get track info");
-                        client.Invoke();
-                        System.Threading.Thread.Sleep(20000);
                     }
                 }
                 else
                 {
-
-                    try
-                    {
-                        Console.Clear();
-                        Console.WriteLine("GroovyRP\nhttps://github.com/dsdude123/GroovyRP\n\nGroove Music is not running or playing audio.");
-                        client.ClearPresence();
-                    }
-                    catch (Exception e)
-                    {
-                        // This is okay, client may have not been initialized
-                    }
-                    System.Threading.Thread.Sleep(20000);
+                    _client.ClearPresence();
+                    oldTrack = new TrackInfo();
+                    _client.Invoke();
                 }
             }
-
         }
 
-        static bool audioCheck()
+        private static void _client_OnPresenceUpdate(object sender, PresenceMessage args)
         {
-            Process[] grooveMusics = Process.GetProcessesByName("Music.UI");
-            if (grooveMusics.Length > 0)
+            if (args.Presence != null)
             {
-                AudioSessionManager2 sessionManager;
-                using (var enumerator = new MMDeviceEnumerator())
+                if (pressenceDetails != args.Presence.Details)
                 {
-                    using (var device = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia))
-                    {
-                        sessionManager = AudioSessionManager2.FromMMDevice(device);
-                    }
+                    pressenceDetails = _client.CurrentPresence?.Details;
+                    Console.Clear();
+                    Console.WriteLine(appDetails);
+                    Console.WriteLine($"{args.Presence.Details}, {args.Presence.State}");
                 }
-
-                using (var sessionEnumerator = sessionManager.GetSessionEnumerator())
-                {
-                    foreach (var session in sessionEnumerator)
-                    {
-                        bool targetProcess = false;
-                        using (var sessionControl = session.QueryInterface<AudioSessionControl2>())
-                        {
-                            var process = sessionControl.Process;
-                            if (process.ProcessName.Equals("Music.UI"))
-                            {
-                                targetProcess = true;
-                            }
-                        }
-                        using (var audioMeter = session.QueryInterface<AudioMeterInformation>())
-                        {
-                            if (audioMeter.GetPeakValue() > 0 && targetProcess)
-                            {
-                                return true;
-                            }
-                        }
-                    }
-                }
-
-                return false;
             }
             else
             {
-                return false;
+                Console.Clear();
+                Console.WriteLine("Nothing Playing");
+                pressenceDetails = string.Empty;
             }
         }
 
-        public static readonly string[] supportedFileTypes = {
-            "aa",
-            "aax",
-            "aac",
-            "aiff",
-            "ape",
-            "dsf",
-            "flac",
-            "m4a",
-            "m4b",
-            "m4p",
-            "mp3",
-            "mpc",
-            "mpp",
-            "ogg",
-            "oga",
-            "wav",
-            "wma",
-            "wv",
-            "webm"
-        };
+        private static void _client_OnError(object sender, ErrorMessage args)
+        {
+            Console.WriteLine(args.Message);
+        }
     }
 }
