@@ -51,6 +51,8 @@ namespace GroovyRP
                     return result;
                 }
             }
+            csvParser.Dispose();
+            streamReader.Dispose();
             return result;
         }
 
