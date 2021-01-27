@@ -12,5 +12,4 @@
 
 ### Changes since last version:
 
-* Added better error handling
-* Switched to CsvHelper library
+* Bugfix for file in use error
