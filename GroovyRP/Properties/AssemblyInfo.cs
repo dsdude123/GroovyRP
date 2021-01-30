@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("GroovyRP")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Groove Music Rich Presence Integration for Discord")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("C.S. Media")]
 [assembly: AssemblyProduct("GroovyRP")]
-[assembly: AssemblyCopyright("Copyright ©  2019")]
+[assembly: AssemblyCopyright("Copyright © 2019-2020 C.S. Media")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
