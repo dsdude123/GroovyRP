@@ -1,0 +1,6 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Config>
+  <IsFirstRun>true</IsFirstRun>
+  <RunWhenGrooveMusicOpens>false</RunWhenGrooveMusicOpens>
+  <HideInSystemTray>false</HideInSystemTray>
+</Config>

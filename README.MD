@@ -2,6 +2,7 @@
 
 * Windows 10
 * Groove Music
+* .NET Framework 4.7.2 or newer
 * Discord (desktop client only)
 * Administrative rights
 ## How to Use:

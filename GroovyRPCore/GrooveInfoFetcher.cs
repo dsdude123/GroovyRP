@@ -78,7 +78,7 @@ namespace GroovyRP
                         using (var sessionControl = session.QueryInterface<AudioSessionControl2>())
                         {
                             var process = sessionControl.Process;
-                            if (process.ProcessName.Equals("Music.UI"))
+                            if (process != null && process.ProcessName.Equals("Music.UI"))
                             {
                                 targetProcess = true;
                             }

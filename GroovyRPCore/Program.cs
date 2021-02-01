@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using DiscordRPC;
 using DiscordRPC.Message;
 
@@ -13,6 +14,9 @@ namespace GroovyRP
 
         private static void Main()
         {
+            Console.WriteLine(appDetails);
+            Console.WriteLine("\nNothing Playing");
+
             _client.Initialize();
             _client.OnError += _client_OnError;
             _client.OnPresenceUpdate += _client_OnPresenceUpdate;
@@ -20,8 +24,19 @@ namespace GroovyRP
             TrackInfo currentTrack = new TrackInfo();
             TrackInfo oldTrack = new TrackInfo();
 
+            bool isPresenceActive = false;
+            bool hasGrooveMusicStartedOnce = false;
+
             while (_client.IsInitialized)
             {
+                Process[] grooveMusics = Process.GetProcessesByName("Music.UI");
+                if (hasGrooveMusicStartedOnce && grooveMusics.Length < 1)
+                {
+                    Environment.Exit(0);
+                } else if (grooveMusics.Length > 0)
+                {
+                    hasGrooveMusicStartedOnce = true;
+                }
                 if (_grooveInfoFetcher.IsUsingAudio())
                 {
                     try
@@ -43,24 +58,33 @@ namespace GroovyRP
                                     SmallImageKey = "groove_small"
                                 }
                             });
-
+                            isPresenceActive = true;
                             _client.Invoke();
                         }
                     }
                     catch (Exception)
                     {
+                        isPresenceActive = true;
                         _client.SetPresence(new RichPresence()
                         {
                             Details = "Failed to get track info"
                         });
-                        Console.WriteLine("Failed to get track info");
+                        Console.Clear();
+                        Console.WriteLine(appDetails);
+                        Console.WriteLine("\nFailed to get track info");
                     }
                 }
                 else
                 {
                     _client.ClearPresence();
                     oldTrack = new TrackInfo();
-                    _client.Invoke();
+                    if(isPresenceActive)
+                    {
+                        Console.Clear();
+                        Console.WriteLine(appDetails);
+                        Console.WriteLine("\nNothing Playing");
+                        isPresenceActive = false;
+                    }
                 }
             }
         }
@@ -80,7 +104,8 @@ namespace GroovyRP
             else
             {
                 Console.Clear();
-                Console.WriteLine("Nothing Playing");
+                Console.WriteLine(appDetails);
+                Console.WriteLine("\nNothing Playing");
                 pressenceDetails = string.Empty;
             }
         }
