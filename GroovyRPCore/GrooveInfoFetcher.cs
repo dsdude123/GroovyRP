@@ -37,17 +37,19 @@ namespace GroovyRP
                     {
                         var media = TagLib.File.Create(data[1]);
 
-                        result.Title = media.Tag.Title;
-                        result.Artist = media.Tag.AlbumArtists.First() ?? "Unknown Artist";
+                        result.Title = media.Tag.Title ?? "Unknown Title";
+                        result.Artist = media.Tag.Performers.DefaultIfEmpty(null).First() ?? media.Tag.AlbumArtists.DefaultIfEmpty(null).First() ?? "Unknown Artist";
                         result.Album = media.Tag.Album ?? "Unknown Album";
 
-                        break;
+                        break; 
                     }
                     streamReader.Close();
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"{ex.Message} \n{ex.StackTrace}");
+                    csvParser.Dispose();
+                    streamReader.Dispose();
                     return result;
                 }
             }
