@@ -15,5 +15,8 @@ namespace GroovyRP
 
         [XmlElement("HideInSystemTray")]
         public bool HideInSystemTray { get; set; }
+
+        [XmlElement("AutoCheckForUpdates")]
+        public bool AutoCheckForUpdates { get; set; }
     }
 }

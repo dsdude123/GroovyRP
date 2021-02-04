@@ -6,6 +6,8 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml.Serialization;
@@ -15,7 +17,8 @@ namespace GroovyRPHelper
     static class Program
     {
 
-        static Process trayKillabaleCore = new Process();
+        static Process coreProcess = new Process();
+        static NotifyIcon systemTray = new NotifyIcon();
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
@@ -54,38 +57,44 @@ namespace GroovyRPHelper
                 hiddenStart.FileName = corePath;
                 hiddenStart.WindowStyle = ProcessWindowStyle.Hidden;
                 hiddenStart.CreateNoWindow = true;
-                Process coreProcess = Process.Start(hiddenStart);
-                NotifyIcon systemTray = new NotifyIcon();
-                systemTray.Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-                systemTray.Text = "GroovyRP";
-
-                ContextMenu contextMenu = new ContextMenu();
-                MenuItem recongifureOption = new MenuItem();
-                MenuItem exitOption = new MenuItem();
-
-                contextMenu.MenuItems.AddRange(new MenuItem[] { recongifureOption, exitOption });
-
-                recongifureOption.Index = 0;
-                recongifureOption.Text = "Reconfigure";
-                recongifureOption.Click += new EventHandler(Reconfigure);
-
-                exitOption.Index = 1;
-                exitOption.Text = "Exit";
-                exitOption.Click += new EventHandler(ExitProgram);
-
-                systemTray.ContextMenu = contextMenu;
-                systemTray.Visible = true;
-                trayKillabaleCore = coreProcess;
-                while(!coreProcess.HasExited)
-                {
-                    Application.DoEvents();
-                }
-                Environment.Exit(0);
+                coreProcess = Process.Start(hiddenStart);                          
             } else
             {
-                Process.Start(corePath);
-                Environment.Exit(0);
+                coreProcess = Process.Start(corePath);
+            };
+
+            systemTray.Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+            systemTray.Text = "GroovyRP";
+
+            ContextMenu contextMenu = new ContextMenu();
+            MenuItem recongifureOption = new MenuItem();
+            MenuItem updateOption = new MenuItem();
+            MenuItem exitOption = new MenuItem();
+
+            contextMenu.MenuItems.AddRange(new MenuItem[] { recongifureOption, updateOption, exitOption });
+
+            recongifureOption.Index = 0;
+            recongifureOption.Text = "Reconfigure";
+            recongifureOption.Click += new EventHandler(Reconfigure);
+
+            updateOption.Index = 1;
+            updateOption.Text = "Check for Updates";
+            updateOption.Click += new EventHandler(UpdateCheck);
+
+            exitOption.Index = 2;
+            exitOption.Text = "Exit";
+            exitOption.Click += new EventHandler(ExitProgram);
+
+            systemTray.ContextMenu = contextMenu;
+            systemTray.Visible = true;
+            
+            if(myConfig.AutoCheckForUpdates) UpdateCheck();
+
+            while (!coreProcess.HasExited)
+            {
+                Application.DoEvents();
             }
+            Environment.Exit(0);
         }
 
         private static Config LoadConfiguration()
@@ -107,7 +116,7 @@ namespace GroovyRPHelper
                 }
                 catch
                 {
-                    MessageBox.Show("An error occured loading the configuration file.", "Invalid Configuration File", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("An error occurred loading the configuration file.", "Invalid Configuration File", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
             else
@@ -188,6 +197,16 @@ namespace GroovyRPHelper
                 config.HideInSystemTray = false;
             }
 
+            DialogResult updateChoice = MessageBox.Show("Do you want to automatically check for updates?", "First Run Setup", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            if (updateChoice.Equals(DialogResult.Yes))
+            {
+                config.AutoCheckForUpdates = true;
+            }
+            else
+            {
+                config.AutoCheckForUpdates = false;
+            }
+
             config.IsFirstRun = false;
 
             return config;
@@ -203,9 +222,43 @@ namespace GroovyRPHelper
             MessageBox.Show("First run setup is complete.", "First Run Setup", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
+        private static void UpdateCheck(object Sender, EventArgs e)
+        {
+            UpdateCheck();
+        }
+
+        private static void UpdateCheck()
+        {
+            try
+            {
+                using (WebClient client = new WebClient())
+                {
+                    XmlSerializer serializer = new XmlSerializer(typeof(VersionInfo));
+                    Stream dataStream = client.OpenRead(@"https://raw.githubusercontent.com/dsdude123/GroovyRP/master/VersionInfo.xml");
+                    VersionInfo newestVersion = (VersionInfo)serializer.Deserialize(dataStream);
+                    Version currentVersion = Assembly.GetEntryAssembly().GetName().Version;
+
+                    if (new Version(newestVersion.Version) > currentVersion)
+                    {
+                        systemTray.BalloonTipIcon = ToolTipIcon.Info;
+                        systemTray.BalloonTipTitle = "New Update Available";
+                        systemTray.BalloonTipText = $"A new update for GroovyRP is available. Version {newestVersion.Version} is available. You have version {currentVersion}.";
+                        systemTray.BalloonTipClicked += new EventHandler(UpdateNotificationClicked);
+                        systemTray.ShowBalloonTip(5000);
+                    }
+                }
+            }
+            catch { }
+        }
+
+        private static void UpdateNotificationClicked(object Sender, EventArgs e)
+        {
+            Process.Start(@"https://github.com/dsdude123/GroovyRP/releases/latest");
+        }
+
         public static void ExitProgram(object Sender, EventArgs e)
         {
-            trayKillabaleCore.Kill();
+            coreProcess.Kill();
             Environment.Exit(0);
         }
     }
