@@ -28,10 +28,17 @@ namespace GroovyRPHelper
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            Process[] coreProcesses = Process.GetProcessesByName("GroovyRPCore");
-            if (coreProcesses.Length > 0)
+            Process[] helperProcesses = Process.GetProcessesByName("GroovyRP");
+            if (helperProcesses.Length > 1)
             {
                 Environment.Exit(0); // GroovyRP already running.
+            } else
+            {
+                Process[] coreProcesses = Process.GetProcessesByName("GroovyRPCore");
+                foreach(Process process in coreProcesses)
+                {
+                    process.Kill(); // Make sure we don't have multiple cores running
+                }
             }
 
             Config myConfig = LoadConfiguration();
@@ -140,8 +147,6 @@ namespace GroovyRPHelper
 
                     task.Triggers.Add(startupTrigger);
                     task.Actions.Add(new ExecAction(Application.ExecutablePath, null, Path.GetDirectoryName(Application.ExecutablePath)));
-                    task.Principal.RunLevel = TaskRunLevel.Highest;
-
 
                     taskService.RootFolder.RegisterTaskDefinition(@"GroovyRPAutoStart", task);
                 }
@@ -245,18 +250,18 @@ namespace GroovyRPHelper
                 try
                 {
                     Process grooveMusic = grooveMusics[0];
-                    ProcessThread grooveMusicMainThread = null;
+                    bool areThreadsActive = false;
 
                     for (int i = 0; i < grooveMusic.Threads.Count; i++)
                     {
-                        if (grooveMusicMainThread == null || grooveMusic.Threads[i].StartTime < grooveMusicMainThread.StartTime)
+                        if (!grooveMusic.Threads[i].ThreadState.Equals(ThreadState.Terminated) &&
+                        !(grooveMusic.Threads[i].ThreadState.Equals(ThreadState.Wait) && grooveMusic.Threads[i].WaitReason.Equals(ThreadWaitReason.Suspended)))
                         {
-                            grooveMusicMainThread = grooveMusic.Threads[i];
+                            areThreadsActive = true;
                         }
                     }
 
-                    if (grooveMusicMainThread.ThreadState.Equals(ThreadState.Terminated) ||
-                        (grooveMusicMainThread.ThreadState.Equals(ThreadState.Wait) && grooveMusicMainThread.WaitReason.Equals(ThreadWaitReason.Suspended)))
+                    if (!areThreadsActive)
                     {
                         ExitProgram(null, null);
                     }

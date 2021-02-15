@@ -1,11 +1,11 @@
 ﻿using CSCore.CoreAudioAPI;
-using CsvHelper;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using Windows.Media.Control;
 
 namespace GroovyRP
 {
@@ -15,46 +15,12 @@ namespace GroovyRP
         {
             var result = new TrackInfo();
 
-            var handleFinder = Process.Start("openedfilesview\\OpenedFilesView.exe", "/processfilter Music.UI.exe /scomma files.csv");
-            handleFinder.WaitForExit();
-            var streamReader = File.OpenText("files.csv");
-            var csvParser = new CsvParser(streamReader, CultureInfo.InvariantCulture);
-
-            var row = csvParser.Read();
-            var rows = new List<string[]>();
-
-            while (row != null)
-            {
-                rows.Add(row);
-                row = csvParser.Read();
-            }
-
-            foreach (string[] data in rows)
-            {
-                try
-                {
-                    if (supportedFileTypes.Contains(data[20], StringComparer.OrdinalIgnoreCase))
-                    {
-                        var media = TagLib.File.Create(data[1]);
-
-                        result.Title = media.Tag.Title ?? "Unknown Title";
-                        result.Artist = media.Tag.Performers.DefaultIfEmpty(null).First() ?? media.Tag.AlbumArtists.DefaultIfEmpty(null).First() ?? "Unknown Artist";
-                        result.Album = media.Tag.Album ?? "Unknown Album";
-
-                        break; 
-                    }
-                    streamReader.Close();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"{ex.Message} \n{ex.StackTrace}");
-                    csvParser.Dispose();
-                    streamReader.Dispose();
-                    return result;
-                }
-            }
-            csvParser.Dispose();
-            streamReader.Dispose();
+            GlobalSystemMediaTransportControlsSessionMediaProperties currentTrack = null;
+            currentTrack = GlobalSystemMediaTransportControlsSessionManager.RequestAsync().GetAwaiter().GetResult().GetCurrentSession().TryGetMediaPropertiesAsync().GetAwaiter().GetResult();
+            result.Title = currentTrack.Title ?? "Unknown Title";
+            result.Artist = currentTrack.Artist ?? currentTrack.AlbumArtist ?? "Unknown Artist";
+            result.Album = currentTrack.AlbumTitle ?? currentTrack.AlbumTitle;
+     
             return result;
         }
 
