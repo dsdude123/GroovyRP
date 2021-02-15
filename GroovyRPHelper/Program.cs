@@ -35,20 +35,6 @@ namespace GroovyRPHelper
             }
 
             Config myConfig = LoadConfiguration();
-            if(myConfig.RunWhenGrooveMusicOpens)
-            {
-                Process[] grooveMusicInstances = Process.GetProcessesByName("Music.UI");
-                if (grooveMusicInstances.Length > 0)
-                {
-                    Process grooveMusic = grooveMusicInstances[0];
-                    if ((grooveMusic.Threads[0].ThreadState == ThreadState.Wait) && grooveMusic.Threads[0].WaitReason == ThreadWaitReason.Suspended)
-                    {
-                        // Some times Groove Music will start up suspended in the background with Suspended state and generate an event. 
-                        // Ok to close GroovyRP since user did not open Groove Music.
-                        Environment.Exit(0);
-                    }
-                }
-            }
 
             string corePath = Path.GetDirectoryName(Application.ExecutablePath) + @"\GroovyRPCore.exe";
             if (myConfig.HideInSystemTray)
@@ -88,10 +74,11 @@ namespace GroovyRPHelper
             systemTray.ContextMenu = contextMenu;
             systemTray.Visible = true;
             
-            if(myConfig.AutoCheckForUpdates) UpdateCheck();
+            if(myConfig.AutoCheckForUpdates) UpdateCheck(null, null);
 
             while (!coreProcess.HasExited)
             {
+                checkGrooveMusicStatus(); // Don't allow program to keep running if Groove Music isn't running
                 Application.DoEvents();
             }
             Environment.Exit(0);
@@ -224,11 +211,6 @@ namespace GroovyRPHelper
 
         private static void UpdateCheck(object Sender, EventArgs e)
         {
-            UpdateCheck();
-        }
-
-        private static void UpdateCheck()
-        {
             try
             {
                 using (WebClient client = new WebClient())
@@ -249,6 +231,40 @@ namespace GroovyRPHelper
                 }
             }
             catch { }
+        }
+
+        public static void checkGrooveMusicStatus()
+        {
+            Process[] grooveMusics = Process.GetProcessesByName("Music.UI");
+            if (grooveMusics.Length < 1)
+            {
+                Environment.Exit(0);
+            }
+            else if (grooveMusics.Length > 0)
+            {
+                try
+                {
+                    Process grooveMusic = grooveMusics[0];
+                    ProcessThread grooveMusicMainThread = null;
+
+                    for (int i = 0; i < grooveMusic.Threads.Count; i++)
+                    {
+                        if (grooveMusicMainThread == null || grooveMusic.Threads[i].StartTime < grooveMusicMainThread.StartTime)
+                        {
+                            grooveMusicMainThread = grooveMusic.Threads[i];
+                        }
+                    }
+
+                    if (grooveMusicMainThread.ThreadState.Equals(ThreadState.Terminated) ||
+                        (grooveMusicMainThread.ThreadState.Equals(ThreadState.Wait) && grooveMusicMainThread.WaitReason.Equals(ThreadWaitReason.Suspended)))
+                    {
+                        ExitProgram(null, null);
+                    }
+                } catch (InvalidOperationException)
+                {
+                    
+                }
+            }
         }
 
         private static void UpdateNotificationClicked(object Sender, EventArgs e)

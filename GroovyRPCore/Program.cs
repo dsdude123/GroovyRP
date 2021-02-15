@@ -26,18 +26,9 @@ namespace GroovyRP
             TrackInfo oldTrack = new TrackInfo();
 
             bool isPresenceActive = false;
-            bool hasGrooveMusicStartedOnce = false;
 
             while (_client.IsInitialized)
             {
-                Process[] grooveMusics = Process.GetProcessesByName("Music.UI");
-                if (hasGrooveMusicStartedOnce && grooveMusics.Length < 1)
-                {
-                    Environment.Exit(0);
-                } else if (grooveMusics.Length > 0)
-                {
-                    hasGrooveMusicStartedOnce = true;
-                }
                 if (_grooveInfoFetcher.IsUsingAudio())
                 {
                     try
