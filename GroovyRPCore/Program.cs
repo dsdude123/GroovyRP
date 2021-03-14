@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using DiscordRPC;
 using DiscordRPC.Message;
 
@@ -13,12 +14,18 @@ namespace GroovyRP
 
         private static void Main()
         {
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
+            Console.WriteLine(appDetails);
+            Console.WriteLine("\nNothing Playing");
+
             _client.Initialize();
             _client.OnError += _client_OnError;
             _client.OnPresenceUpdate += _client_OnPresenceUpdate;
 
             TrackInfo currentTrack = new TrackInfo();
             TrackInfo oldTrack = new TrackInfo();
+
+            bool isPresenceActive = false;
 
             while (_client.IsInitialized)
             {
@@ -43,24 +50,33 @@ namespace GroovyRP
                                     SmallImageKey = "groove_small"
                                 }
                             });
-
+                            isPresenceActive = true;
                             _client.Invoke();
                         }
                     }
                     catch (Exception)
                     {
+                        isPresenceActive = true;
                         _client.SetPresence(new RichPresence()
                         {
                             Details = "Failed to get track info"
                         });
-                        Console.WriteLine("Failed to get track info");
+                        Console.Clear();
+                        Console.WriteLine(appDetails);
+                        Console.WriteLine("\nFailed to get track info");
                     }
                 }
                 else
                 {
                     _client.ClearPresence();
                     oldTrack = new TrackInfo();
-                    _client.Invoke();
+                    if(isPresenceActive)
+                    {
+                        Console.Clear();
+                        Console.WriteLine(appDetails);
+                        Console.WriteLine("\nNothing Playing");
+                        isPresenceActive = false;
+                    }
                 }
             }
         }
@@ -80,7 +96,8 @@ namespace GroovyRP
             else
             {
                 Console.Clear();
-                Console.WriteLine("Nothing Playing");
+                Console.WriteLine(appDetails);
+                Console.WriteLine("\nNothing Playing");
                 pressenceDetails = string.Empty;
             }
         }

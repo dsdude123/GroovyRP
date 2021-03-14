@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("C.S. Media")]
 [assembly: AssemblyProduct("GroovyRP")]
-[assembly: AssemblyCopyright("Copyright © 2019-2020 C.S. Media")]
+[assembly: AssemblyCopyright("Copyright © 2019-2021 C.S. Media")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
