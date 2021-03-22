@@ -8,7 +8,8 @@ Groove Music Rich Presence for Discord
 * Discord (desktop client only)
 ## How to Use:
 
-* Download and extract GroovyRP.zip.
+* Download the latest release of GroovyRP https://github.com/dsdude123/GroovyRP/releases/latest
+* Extract GroovyRP.zip.
 * Run GroovyRP.exe.
 
 ## Changes since last version:
