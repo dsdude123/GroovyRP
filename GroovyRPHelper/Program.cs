@@ -140,7 +140,7 @@ namespace GroovyRPHelper
                     startupTrigger.Subscription = @"
                         <QueryList>
                             <Query Id='0' Path='Application'>
-                            <Select Path='Application'>Event[System[Provider[@Name='ESENT'] and (Level=4 or Level=0) and (EventID=102)] and EventData[Data='Music.UI']]</Select>
+                            <Select Path='Application'>Event[System[Provider[@Name='ESENT'] and (Level=4 or Level=0) and (EventID=102)] and EventData[Data='Microsoft.Media.Player']]</Select>
                             </Query>
                         </QueryList>
                         ";
@@ -167,17 +167,24 @@ namespace GroovyRPHelper
         private static Config CreateConfiguration()
         {
             Config config = new Config();
-            DialogResult autoStartChoice = MessageBox.Show("Do you want to automatically start GroovyRP when Groove Music is opened?", "First Run Setup", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-            if (autoStartChoice.Equals(DialogResult.Yes))
-            {
-                RegisterTask();
-                config.RunWhenGrooveMusicOpens = true;
-            }
-            else
-            {
-                UnregisterTask();
-                config.RunWhenGrooveMusicOpens = false;
-            }
+
+            /*
+             * The new media player no longer generates events needed to auto start GrovvyRP.
+             * Unfortinutely have no choice but to disable auto start support for now.
+             */
+            UnregisterTask();
+            config.RunWhenGrooveMusicOpens = false;
+            //DialogResult autoStartChoice = MessageBox.Show("Do you want to automatically start GroovyRP when Groove Music is opened?", "First Run Setup", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            //if (autoStartChoice.Equals(DialogResult.Yes))
+            //{
+            //    RegisterTask();
+            //    config.RunWhenGrooveMusicOpens = true;
+            //}
+            //else
+            //{
+            //    UnregisterTask();
+            //    config.RunWhenGrooveMusicOpens = false;
+            //}
 
             DialogResult hideChoice = MessageBox.Show("Do you want to run GroovyRP in the background when it is opened?", "First Run Setup", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
             if (hideChoice.Equals(DialogResult.Yes))
@@ -240,7 +247,7 @@ namespace GroovyRPHelper
 
         public static void checkGrooveMusicStatus()
         {
-            Process[] grooveMusics = Process.GetProcessesByName("Music.UI");
+            Process[] grooveMusics = Process.GetProcessesByName("Microsoft.Media.Player");
             if (grooveMusics.Length < 1)
             {
                 Environment.Exit(0);
