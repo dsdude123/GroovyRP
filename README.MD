@@ -3,7 +3,7 @@ Groove Music Rich Presence for Discord
 ## System Requirements:
 
 * Windows 10 version 1809 or newer
-* Groove Music
+* Microsoft Music Player
 * .NET Framework 4.7.2 or newer
 * Discord (desktop client only)
 ## How to Use:
