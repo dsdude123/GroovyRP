@@ -14,13 +14,8 @@ Groove Music Rich Presence for Discord
 
 ## Changes since last version:
 
-* Add support for automatically starting when Groove Music opens.
-* Add support for hiding to the system tray
-* Add update support
-* Remove need for administrative rights
-* Improve console handling for Unicode
-* Fix issue when Album Artist is missing
-* License repository
+* Add support for the new media player that replaced Groove Music. This program no longer works with the original Groove Music and users with that player still installed should not update. 
+* Disabled auto-start support. Unfortunately, the new media player does not generate events necessary to trigger GroovyRP to automatically start.
 
 ## Legal Stuff:
 Use of this application and/or its source code is subject to the terms of the MIT License as defined in the LICENSE file included in this repository. All product and company names are trademarks™ or registered® trademarks of their respective holders. Use of them does not imply any affiliation with or endorsement by them. 
